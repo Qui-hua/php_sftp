@@ -1,0 +1,79 @@
+<?php
+/**
+* SFtp上傳下載檔案
+*
+*/
+namespace Common\ORG\Util;
+class Sftp
+{
+// 初始配置為NULL
+private $config = NULL;
+// 連線為NULL
+private $conn = NULL;
+// 初始化
+public function __construct($config)
+{
+	$this->config = $config;
+	$this->connect();
+	}
+	public function connect()
+	{
+	$this->conn = ssh2_connect($this->config['host'], $this->config['port']);
+	if( ssh2_auth_password($this->conn, $this->config['username'], $this->config['password']))
+	{
+	}else{ 
+	echo "無法在伺服器進行身份驗證";
+	}
+	}
+	// 傳輸資料 傳輸層協議,獲得資料
+	public function downftp($remote, $local)
+	{ 
+	$ressftp = ssh2_sftp($this->conn);
+	return copy("ssh2.sftp://{$ressftp}".$remote, $local);
+	}
+	// 傳輸資料 傳輸層協議,寫入ftp伺服器資料
+	public function upftp( $local,$remote, $file_mode = 0777)
+	{ 
+	$ressftp = ssh2_sftp($this->conn);
+	return copy($local,"ssh2.sftp://{$ressftp}".$remote); 
+	}
+	
+	function del_file($path) 
+	{ 
+		@ftp_delete($this->conn,$path); 
+	} 
+
+
+}
+
+
+$config = array(
+	'host' =>'210.242.165.130', //伺服器
+	'port' => '22', //埠
+	'username' =>'prg', //使用者名稱
+	'password' =>'prg', //密碼
+);
+
+
+$ftp = new Sftp($config);
+$localpath="D:/data/V3/primasia/";
+$serverpath='/syscom/cobol_backup/';
+$filename=date("Ymd").".tar.gz";
+
+/*
+$st = $ftp->upftp($localpath.$filename,$serverpath.$filename); //上傳指定檔案
+if($st == true){
+echo "success";
+}else{
+echo "fail";
+}
+*/
+
+$st = $ftp->downftp($serverpath.$filename,$localpath.$filename); //檔案下載
+if($st == true){
+echo "downftp   success";
+}else{
+echo "downftp   fail";
+}
+
+?>
